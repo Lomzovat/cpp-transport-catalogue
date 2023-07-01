@@ -5,7 +5,7 @@ namespace transport_catalogue {
 
         namespace stop {
 
-            void QueryStop(TransportCatalogue& catalogue, std::string_view stop_name) {
+            void PrintQueryStop(TransportCatalogue& catalogue, std::string_view stop_name) {
                 auto first_stop = 5;
                 stop_name = stop_name.substr(first_stop);
                 std::unordered_set<const Bus*> unique_buses;
@@ -15,7 +15,7 @@ namespace transport_catalogue {
                 Stop* stop = catalogue.GetStop(stop_name);
 
                 if (stop != NULL) {
-                    unique_buses = catalogue.stop_get_uniq_buses(stop);
+                    unique_buses = catalogue.StopGetUniqueBuses(stop);
 
                     if (unique_buses.size() == 0) {
                         std::cout << "Stop " << stop_name << ": no buses" << std::endl;
@@ -24,7 +24,7 @@ namespace transport_catalogue {
                         std::cout << "Stop " << stop_name << ": buses ";
 
                         for (const Bus* _bus : unique_buses) {
-                            bus_name_.push_back(_bus->name);
+                            bus_name_.push_back(_bus->bus_name);
                         }
 
                         std::sort(bus_name_.begin(), bus_name_.end());
@@ -41,22 +41,21 @@ namespace transport_catalogue {
                 }
             }
         }
-
-
         namespace bus {
 
-            void QueryBus(TransportCatalogue& catalogue, std::string_view str) {
+            void PrintQueryBus(TransportCatalogue& catalogue, std::string_view str) {
                 auto first_bus = 4;
                 str = str.substr(first_bus);
 
                 Bus* bus = catalogue.GetBus(str);
                 if (bus != nullptr) {
-                    std::cout << "Bus " << bus->name << ": "
-                        << bus->stops.size() << " stops on route, "
-                        << (catalogue.get_uniq_stops(bus)).size() << " unique stops, "
-                        << catalogue.get_distance_to_bus(bus) << " route length, "
-                        << std::setprecision(6) << double(catalogue.get_distance_to_bus(bus)
-                            / catalogue.get_length(bus))
+                    std::cout << "Bus " << bus->bus_name << ": "
+                        << bus->stops_on_route.size() << " stops on route, "
+                        << bus->count_unique_stops << " unique stops, "
+                        << catalogue.GetDistanceForBus(bus) << " route length, "
+                        << std::setprecision(6) << double(catalogue.GetDistanceForBus(bus)
+
+                            / catalogue.GetLength(bus))
                         << " curvature" << std::endl;
                 }
                 else {
@@ -65,36 +64,31 @@ namespace transport_catalogue {
             }
         }
 
-
-        void ParseQuery(TransportCatalogue& catalogue, std::string_view str) {
+        void PrintParseQuery(TransportCatalogue& catalogue, std::string_view str) {
             if (str.substr(0, 3) == "Bus") {
-                bus::QueryBus(catalogue, str);
+                bus::PrintQueryBus(catalogue, str);
             }
             else if (str.substr(0, 4) == "Stop") {
-                stop::QueryStop(catalogue, str);
+                stop::PrintQueryStop(catalogue, str);
             }
             else {
                 std::cout << "Error query" << std::endl;
             }
         }
 
-        void OutputQuery(TransportCatalogue& catalogue) {
+        void ReadOutputQuery(std::istream& input, TransportCatalogue& catalogue) {
             std::string count;
-            std::getline(std::cin, count);
+            std::getline(input, count);
 
             std::string str;
-            std::vector<std::string> query;
+
             auto num = stoi(count);
 
             for (int i = 0; i < num; ++i) {
-                std::getline(std::cin, str);
-                query.push_back(str);
+                std::getline(input, str);
+                PrintParseQuery(catalogue, str);
             }
 
-            for (auto& st : query) {
-                ParseQuery(catalogue, st);
-            }
         }
-
     }
 }

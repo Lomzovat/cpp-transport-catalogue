@@ -2,22 +2,17 @@
 #include "transport_catalogue.h"
 
 namespace transport_catalogue {
-    namespace detail {
+	namespace detail {
+		namespace stop {
+			Stop ParseStop(std::string_view str);
 
-        namespace stop {
-
-            Stop ParsingStop(std::string_view str);
-        }
-
-        namespace bus {
-            Bus ParsingBus(TransportCatalogue& catalogue, std::string_view str);
-        }
-
-        namespace distance {
-            std::vector<Distance> parsing_distance(std::string str, TransportCatalogue& catalogue);
-        }
-
-        void InputQuery(TransportCatalogue& catalogue);
-
-    }
+		}
+		namespace bus {
+			Bus ParseBus(TransportCatalogue& catalogue, std::string_view str);
+		}
+		namespace distance {
+			DistanceToStop ParseDistance(std::string str, TransportCatalogue& catalogue);
+		}
+		void ParseInputQuery(std::istream& input, TransportCatalogue& catalogue);
+	}
 }

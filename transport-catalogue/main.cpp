@@ -6,8 +6,9 @@ using namespace std;
 using namespace transport_catalogue;
 using namespace transport_catalogue::detail;
 
+
 int main() {
     TransportCatalogue catalogue;
-    InputQuery(catalogue);
-    OutputQuery(catalogue);
+    ParseInputQuery(std::cin, catalogue);
+    ReadOutputQuery(std::cin, catalogue);
 }
