@@ -30,7 +30,7 @@ namespace transport_catalogue {
         size_t count_stops_on_route;
         size_t count_unique_stops;
         double route_length;
-        
+
 
     };
 
@@ -48,7 +48,7 @@ namespace transport_catalogue {
     };
 
 
-    typedef  std::unordered_map<std::pair<const Stop*, const Stop*>, int, DistanceHasher> DistanceToStop;
+    using DistanceToStop = std::unordered_map<std::pair<const Stop*, const Stop*>, int, DistanceHasher>;
 
 
     class TransportCatalogue {

@@ -6,15 +6,15 @@ namespace transport_catalogue {
         namespace stop {
 
             void PrintQueryStop(TransportCatalogue& catalogue, std::string_view stop_name) {
-                auto first_stop = 5;
-                stop_name = stop_name.substr(first_stop);
+                auto entry_word = 5;
+                stop_name = stop_name.substr(entry_word);
                 std::unordered_set<const Bus*> unique_buses;
                 std::unordered_set<std::string_view> unique_buses_name;
                 std::vector <std::string> bus_name_;
 
                 Stop* stop = catalogue.GetStop(stop_name);
 
-                if (stop != NULL) {
+                if (stop != nullptr) {
                     unique_buses = catalogue.StopGetUniqueBuses(stop);
 
                     if (unique_buses.size() == 0) {
@@ -44,8 +44,8 @@ namespace transport_catalogue {
         namespace bus {
 
             void PrintQueryBus(TransportCatalogue& catalogue, std::string_view str) {
-                auto first_bus = 4;
-                str = str.substr(first_bus);
+                auto entry_word = 4;
+                str = str.substr(entry_word);
 
                 Bus* bus = catalogue.GetBus(str);
                 if (bus != nullptr) {
