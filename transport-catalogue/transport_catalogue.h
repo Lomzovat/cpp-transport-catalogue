@@ -10,29 +10,11 @@
 #include <unordered_set>
 #include <unordered_map>
 
-#include "geo.h"
+#include "domain.h"
+
+using namespace domain;
 
 namespace transport_catalogue {
-
-    struct Bus;
-
-    struct Stop {
-        std::string stop_name;
-        geo::Coordinates coordinates;
-
-        std::vector<Bus*> buses;
-    };
-
-    struct Bus {
-        std::string bus_name;
-        std::vector<Stop*> stops_on_route;
-
-        size_t count_stops_on_route;
-        size_t count_unique_stops;
-        double route_length;
-
-
-    };
 
 
 
@@ -55,16 +37,22 @@ namespace transport_catalogue {
     public:
         void AddBus(const Bus& bus);
         void AddStop(const Stop& stop);
+
         void AddDistance(const DistanceToStop distances);
 
-        double GetLength(const Bus* bus);
+        double GetLength(Bus* bus);
 
         Bus* GetBus(std::string_view _bus_name);
         Stop* GetStop(std::string_view _stop_name);
 
+        std::unordered_map<std::string_view, Bus*> GetBusnameToBus() const;
+        std::unordered_map<std::string_view, Stop*> GetStopnameToStop() const;
+        std::unordered_set<const Stop*> GetUniqStops(Bus* bus);
+
         std::unordered_set<const Bus*> StopGetUniqueBuses(Stop* stop);
 
-        size_t GetDistanceStop(const Stop* _start, const Stop* _finish);
+
+        size_t GetDistanceStop(const Stop* start, const Stop* finish);
         size_t GetDistanceForBus(Bus* _bus);
     private:
         std::deque<Stop> stops;
@@ -72,7 +60,6 @@ namespace transport_catalogue {
 
         std::unordered_map<std::string_view, Stop*> stopname_to_stop;
         std::unordered_map<std::string_view, Bus*> busname_to_bus;
-
 
         DistanceToStop distance_to_stop;
 
