@@ -1,7 +1,9 @@
 #define _USE_MATH_DEFINES
 #include "geo.h"
 
+
 namespace geo {
+
 
     double ComputeDistance(Coordinates from, Coordinates to) {
         using namespace std;
@@ -14,4 +16,4 @@ namespace geo {
             * EARTH_R;
     }
 
-}  // end namespace geo
+}  // namespace geo

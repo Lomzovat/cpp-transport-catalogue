@@ -3,6 +3,7 @@
 namespace request_handler {
 
 
+
     Node RequestHandler::GetNodeStop(int id_request, StopStat stop_info) {
         Dict result;
         Array buses;
@@ -51,7 +52,7 @@ namespace request_handler {
         std::string map_str;
 
         MapRenderer map_catalogue(render_settings);
-        map_catalogue.SetSphereProjector(GetStopCoordinates(catalogue));
+        map_catalogue.RenderSphereProjector(GetStopCoordinates(catalogue));
         ParseMapRender(map_catalogue, catalogue);
         map_catalogue.GetMapStream(map_stream);
         map_str = map_stream.str();
@@ -234,4 +235,4 @@ namespace request_handler {
     const Document& RequestHandler::GetDocument() const {
         return document_out;
     }
-} // end namespace request_handler
+}

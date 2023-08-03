@@ -18,6 +18,8 @@ public:
 	Stop ParseNodeStop(Node& node);
 	Bus ParseNodeBus(Node& node, TransportCatalogue& catalogue);
 
+	svg::Color WorkWithColor(Array& arr_color);
+
 	void ParseBaseRequest(const Node& root, TransportCatalogue& catalogue);
 	void ParseStatRequest(const Node& root, std::vector<QueryStat>& stat_request);
 	void ParseRenderRequest(const Node& node, map_renderer::RenderSettings& render_settings);

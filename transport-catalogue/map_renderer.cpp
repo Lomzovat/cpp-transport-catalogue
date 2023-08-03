@@ -1,5 +1,7 @@
 #include "map_renderer.h"
 
+using namespace std::literals;
+
 namespace map_renderer {
 
 
@@ -22,7 +24,7 @@ namespace map_renderer {
             render_settings_.padding_);
     }
 
-    void MapRenderer::SetSphereProjector(std::vector<geo::Coordinates> points) {
+    void MapRenderer::RenderSphereProjector(std::vector<geo::Coordinates> points) {
         sphere_projector = SphereProjector(points.begin(),
             points.end(),
             render_settings_.width_,
@@ -42,9 +44,9 @@ namespace map_renderer {
         return render_settings_.color_palette_[line_number];
     }
 
-    void MapRenderer::SetLineProperties(svg::Polyline& polyline,
+    void MapRenderer::RenderLineProperties(svg::Polyline& polyline,
         int line_number) const {
-        using namespace std::literals;
+
 
         polyline.SetStrokeColor(GetColor(line_number));
         polyline.SetFillColor("none"s);
@@ -53,10 +55,10 @@ namespace map_renderer {
         polyline.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
     }
 
-    void MapRenderer::SetBusTextProperties(svg::Text& text,
+    void MapRenderer::RenderBusTextProperties(svg::Text& text,
         const std::string& name,
         svg::Point position) const {
-        using namespace std::literals;
+
 
         text.SetPosition(position);
         text.SetOffset({ render_settings_.bus_label_offset_.first,
@@ -67,10 +69,10 @@ namespace map_renderer {
         text.SetData(name);
     }
 
-    void MapRenderer::SetBusTextAddProperties(svg::Text& text,
+    void MapRenderer::RenderBusTextAddProperties(svg::Text& text,
         const std::string& name,
         svg::Point position) const {
-        SetBusTextProperties(text,
+        RenderBusTextProperties(text,
             name,
             position);
 
@@ -81,30 +83,30 @@ namespace map_renderer {
         text.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
     }
 
-    void MapRenderer::SetBusTextColorProperties(svg::Text& text,
+    void MapRenderer::RenderBusTextColorProperties(svg::Text& text,
         const std::string& name,
         int palette,
         svg::Point position) const {
-        SetBusTextProperties(text,
+        RenderBusTextProperties(text,
             name,
             position);
 
         text.SetFillColor(GetColor(palette));
     }
 
-    void MapRenderer::SetStopsCirclesProperties(svg::Circle& circle,
+    void MapRenderer::RenderStopsCirclesProperties(svg::Circle& circle,
         svg::Point position) const {
-        using namespace std::literals;
+
 
         circle.SetCenter(position);
         circle.SetRadius(render_settings_.stop_radius_);
         circle.SetFillColor("white");
     }
 
-    void MapRenderer::SetStopsTextProperties(svg::Text& text,
+    void MapRenderer::RenderStopsTextProperties(svg::Text& text,
         const std::string& name,
         svg::Point position) const {
-        using namespace std::literals;
+
 
         text.SetPosition(position);
         text.SetOffset({ render_settings_.stop_label_offset_.first,
@@ -114,11 +116,11 @@ namespace map_renderer {
         text.SetData(name);
     }
 
-    void MapRenderer::SetStopsTextAddProperties(svg::Text& text,
+    void MapRenderer::RenderStopsTextAddProperties(svg::Text& text,
         const std::string& name,
         svg::Point position) const {
-        using namespace std::literals;
-        SetStopsTextProperties(text,
+
+        RenderStopsTextProperties(text,
             name,
             position);
 
@@ -129,12 +131,12 @@ namespace map_renderer {
         text.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
     }
 
-    void MapRenderer::SetStopsTextColorProperties(svg::Text& text,
+    void MapRenderer::RenderStopsTextColorProperties(svg::Text& text,
         const std::string& name,
         svg::Point position) const {
-        using namespace std::literals;
 
-        SetStopsTextProperties(text,
+
+        RenderStopsTextProperties(text,
             name,
             position);
         text.SetFillColor("black");
@@ -162,7 +164,7 @@ namespace map_renderer {
             }
 
             if (!bus_empty) {
-                SetLineProperties(bus_line,
+                RenderLineProperties(bus_line,
                     palette);
                 map_.Add(bus_line);
             }
@@ -195,12 +197,12 @@ namespace map_renderer {
             if (!bus_empty) {
 
                 if (bus->is_roundtrip) {
-                    SetBusTextAddProperties(route_name_roundtrip,
+                    RenderBusTextAddProperties(route_name_roundtrip,
                         std::string(bus->name),
                         sphere_projector(stops_geo_coords[0]));
                     map_.Add(route_name_roundtrip);
 
-                    SetBusTextColorProperties(route_title_roundtrip,
+                    RenderBusTextColorProperties(route_title_roundtrip,
                         std::string(bus->name),
                         palette,
                         sphere_projector(stops_geo_coords[0]));
@@ -208,24 +210,24 @@ namespace map_renderer {
 
                 }
                 else {
-                    SetBusTextAddProperties(route_name_roundtrip,
+                    RenderBusTextAddProperties(route_name_roundtrip,
                         std::string(bus->name),
                         sphere_projector(stops_geo_coords[0]));
                     map_.Add(route_name_roundtrip);
 
-                    SetBusTextColorProperties(route_title_roundtrip,
+                    RenderBusTextColorProperties(route_title_roundtrip,
                         std::string(bus->name),
                         palette,
                         sphere_projector(stops_geo_coords[0]));
                     map_.Add(route_title_roundtrip);
 
                     if (stops_geo_coords[0] != stops_geo_coords[stops_geo_coords.size() / 2]) {
-                        SetBusTextAddProperties(route_name_notroundtrip,
+                        RenderBusTextAddProperties(route_name_notroundtrip,
                             std::string(bus->name),
                             sphere_projector(stops_geo_coords[stops_geo_coords.size() / 2]));
                         map_.Add(route_name_notroundtrip);
 
-                        SetBusTextColorProperties(route_title_notroundtrip,
+                        RenderBusTextColorProperties(route_title_notroundtrip,
                             std::string(bus->name),
                             palette,
                             sphere_projector(stops_geo_coords[stops_geo_coords.size() / 2]));
@@ -250,7 +252,7 @@ namespace map_renderer {
                 coordinates.latitude = stop_info->coordinates.latitude;
                 coordinates.longitude = stop_info->coordinates.longitude;
 
-                SetStopsCirclesProperties(icon,
+                RenderStopsCirclesProperties(icon,
                     sphere_projector(coordinates));
                 map_.Add(icon);
             }
@@ -270,12 +272,12 @@ namespace map_renderer {
                 coordinates.latitude = stop_info->coordinates.latitude;
                 coordinates.longitude = stop_info->coordinates.longitude;
 
-                SetStopsTextAddProperties(svg_stop_name,
+                RenderStopsTextAddProperties(svg_stop_name,
                     stop_info->name,
                     sphere_projector(coordinates));
                 map_.Add(svg_stop_name);
 
-                SetStopsTextColorProperties(svg_stop_name_title,
+                RenderStopsTextColorProperties(svg_stop_name_title,
                     stop_info->name,
                     sphere_projector(coordinates));
                 map_.Add(svg_stop_name_title);

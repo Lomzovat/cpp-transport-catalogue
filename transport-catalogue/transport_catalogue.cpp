@@ -29,6 +29,8 @@ namespace transport_catalogue {
         }
     }
 
+
+
     Bus* TransportCatalogue::GetBus(std::string_view bus_name) {
         if (busname_to_bus.empty()) {
             return nullptr;
@@ -115,5 +117,7 @@ namespace transport_catalogue {
         }
         return distance;
     }
+
+
 
 }//end namespace transport_catalogue

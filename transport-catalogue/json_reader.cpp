@@ -34,9 +34,9 @@ DistanceToStop JsonReader::ParseNodeDistance(Node& node, TransportCatalogue& cat
         begin_name = stop_node.at("name").AsString();
 
         road_distances = stop_node.at("road_distances").AsDict();
-        for (auto [key, value] : road_distances) {
-            std::string last_name = key;
-            int distance = value.AsInt();
+        for (auto [dest, dist] : road_distances) {
+            std::string last_name = dest;
+            int distance = dist.AsInt();
             distance_to_stop[std::make_pair(catalogue.GetStop(begin_name),
                 catalogue.GetStop(last_name))] = distance;
         }
@@ -151,6 +151,8 @@ void JsonReader::ParseStatRequest(const Node& node, std::vector<QueryStat>& stat
     }
 }
 
+
+
 void JsonReader::ParseRenderRequest(const Node& node, map_renderer::RenderSettings& render_settings) {
     Dict render_map;
 
@@ -183,22 +185,7 @@ void JsonReader::ParseRenderRequest(const Node& node, map_renderer::RenderSettin
         }
         else if (render_map.at("underlayer_color").IsArray()) {
             Array arr_color = render_map.at("underlayer_color").AsArray();
-            uint8_t red_ = arr_color[0].AsInt();
-            uint8_t green_ = arr_color[1].AsInt();
-            uint8_t blue_ = arr_color[2].AsInt();
-
-            if (arr_color.size() == 4) {
-                double opacity_ = arr_color[3].AsDouble();
-                render_settings.underlayer_color_ = svg::Color(svg::Rgba(red_,
-                    green_,
-                    blue_,
-                    opacity_));
-            }
-            else if (arr_color.size() == 3) {
-                render_settings.underlayer_color_ = svg::Color(svg::Rgb(red_,
-                    green_,
-                    blue_));
-            }
+            render_settings.underlayer_color_ = (WorkWithColor(arr_color));
         }
 
         render_settings.underlayer_width_ = render_map.at("underlayer_width").AsDouble();
@@ -213,22 +200,8 @@ void JsonReader::ParseRenderRequest(const Node& node, map_renderer::RenderSettin
                 }
                 else if (color_palette.IsArray()) {
                     Array arr_color = color_palette.AsArray();
-                    uint8_t red_ = arr_color[0].AsInt();
-                    uint8_t green_ = arr_color[1].AsInt();
-                    uint8_t blue_ = arr_color[2].AsInt();
+                    render_settings.color_palette_.push_back(WorkWithColor(arr_color));
 
-                    if (arr_color.size() == 4) {
-                        double opacity_ = arr_color[3].AsDouble();
-                        render_settings.color_palette_.push_back(svg::Color(svg::Rgba(red_,
-                            green_,
-                            blue_,
-                            opacity_)));
-                    }
-                    else if (arr_color.size() == 3) {
-                        render_settings.color_palette_.push_back(svg::Color(svg::Rgb(red_,
-                            green_,
-                            blue_)));
-                    }
                 }
             }
         }
@@ -237,6 +210,24 @@ void JsonReader::ParseRenderRequest(const Node& node, map_renderer::RenderSettin
         std::cout << "unable to set settings";
     }
 }
+
+
+svg::Color JsonReader::WorkWithColor(Array& arr_color) {
+    svg::Color color_;
+    uint8_t red_ = arr_color[0].AsInt();
+    uint8_t green_ = arr_color[1].AsInt();
+    uint8_t blue_ = arr_color[2].AsInt();
+
+    if (arr_color.size() == 4) {
+        double opacity_ = arr_color[3].AsDouble();
+        color_ = svg::Color(svg::Rgba(red_, green_, blue_, opacity_));
+    }
+    else if (arr_color.size() == 3) {
+        color_ = svg::Color(svg::Rgb(red_, green_, blue_));
+    }
+    return color_;
+}
+
 
 
 void JsonReader::ParseNode(const Node& root, TransportCatalogue& catalogue, std::vector<QueryStat>& stat_request, map_renderer::RenderSettings& render_settings) {

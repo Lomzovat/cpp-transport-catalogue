@@ -57,23 +57,23 @@ namespace map_renderer {
         MapRenderer(RenderSettings& render_settings);
 
         SphereProjector GetSphereProjector(const std::vector<geo::Coordinates>& points) const;
-        void SetSphereProjector(std::vector<geo::Coordinates> points);
+        void RenderSphereProjector(std::vector<geo::Coordinates> points);
 
         RenderSettings GetRenderSettings() const;
         int GetPaletteSize() const;
         svg::Color GetColor(int line_number) const;
 
-        void SetLineProperties(svg::Polyline& polyline, int line_number) const;
+        void RenderLineProperties(svg::Polyline& polyline, int line_number) const;
 
-        void SetBusTextProperties(svg::Text& text, const std::string& name, svg::Point position) const;
-        void SetBusTextAddProperties(svg::Text& text, const std::string& name, svg::Point position) const;
-        void SetBusTextColorProperties(svg::Text& text, const std::string& name, int palette, svg::Point position) const;
+        void RenderBusTextProperties(svg::Text& text, const std::string& name, svg::Point position) const;
+        void RenderBusTextAddProperties(svg::Text& text, const std::string& name, svg::Point position) const;
+        void RenderBusTextColorProperties(svg::Text& text, const std::string& name, int palette, svg::Point position) const;
 
-        void SetStopsCirclesProperties(svg::Circle& circle, svg::Point position) const;
+        void RenderStopsCirclesProperties(svg::Circle& circle, svg::Point position) const;
 
-        void SetStopsTextProperties(svg::Text& text, const std::string& name, svg::Point position) const;
-        void SetStopsTextAddProperties(svg::Text& text, const std::string& name, svg::Point position) const;
-        void SetStopsTextColorProperties(svg::Text& text, const std::string& name, svg::Point position) const;
+        void RenderStopsTextProperties(svg::Text& text, const std::string& name, svg::Point position) const;
+        void RenderStopsTextAddProperties(svg::Text& text, const std::string& name, svg::Point position) const;
+        void RenderStopsTextColorProperties(svg::Text& text, const std::string& name, svg::Point position) const;
 
         void AddLine(std::vector<std::pair<Bus*, int>>& buses_palette);
         void AddBusRoute(std::vector<std::pair<Bus*, int>>& buses_palette);
