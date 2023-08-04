@@ -23,7 +23,7 @@ namespace transport_catalogue {
         bus_buf->route_length = GetDistanceForBus(bus_buf);
     }
 
-    void TransportCatalogue::AddDistance(DistanceToStop distances) {
+    void TransportCatalogue::AddDistance(const DistanceToStop& distances) {
         for (const auto& [key, value] : distances) {
             distance_to_stop[key] = value;
         }

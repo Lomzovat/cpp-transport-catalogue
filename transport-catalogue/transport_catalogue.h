@@ -38,7 +38,7 @@ namespace transport_catalogue {
         void AddBus(const Bus& bus);
         void AddStop(const Stop& stop);
 
-        void AddDistance(const DistanceToStop distances);
+        void AddDistance(const DistanceToStop& distances);
 
         double GetLength(Bus* bus);
 

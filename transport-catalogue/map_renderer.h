@@ -7,8 +7,10 @@
 #include "domain.h"
 #include "geo.h"
 #include "svg.h"
+#include "transport_catalogue.h"
 
 using namespace domain;
+using namespace transport_catalogue;
 
 namespace map_renderer {
 
@@ -80,6 +82,9 @@ namespace map_renderer {
         void AddStopCircle(std::vector<Stop*>& stops_name);
         void AddStopName(std::vector<Stop*>& stops_name);
 
+        std::vector<std::string_view> GetSortedBusesNames(TransportCatalogue& catalog) const;
+        void ParseMapRender(MapRenderer& map_catalogue, TransportCatalogue& catalogue) const;
+
         void GetMapStream(std::ostream& stream_);
 
     private:
@@ -144,3 +149,4 @@ namespace map_renderer {
         }
     }
 }
+

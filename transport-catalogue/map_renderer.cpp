@@ -285,6 +285,91 @@ namespace map_renderer {
         }
     }
 
+    std::vector<std::string_view> MapRenderer::GetSortedBusesNames(TransportCatalogue& catalog) const {
+        std::vector<std::string_view> buses_names;
+
+        auto buses = catalog.GetBusnameToBus();
+        if (buses.size() > 0) {
+
+            for (auto& [busname, bus] : buses) {
+                buses_names.push_back(busname);
+            }
+
+            std::sort(buses_names.begin(), buses_names.end());
+
+            return buses_names;
+
+        }
+        else {
+            return {};
+        }
+    }
+
+
+
+    void MapRenderer::ParseMapRender(MapRenderer& map_catalogue, TransportCatalogue& catalogue) const {
+        std::vector<std::pair<Bus*, int>> buses_palette;
+        std::vector<Stop*> stops_sort;
+        int palette_size = 0;
+        int palette_index = 0;
+
+        palette_size = map_catalogue.GetPaletteSize();
+        if (palette_size == 0) {
+            std::cout << "color palette is empty";
+            return;
+        }
+
+        auto buses = catalogue.GetBusnameToBus();
+        if (buses.size() > 0) {
+
+            for (std::string_view bus_name : GetSortedBusesNames(catalogue)) {
+                Bus* bus_info = catalogue.GetBus(bus_name);
+
+                if (bus_info) {
+                    if (bus_info->stops_on_route.size() > 0) {
+                        buses_palette.push_back(std::make_pair(bus_info, palette_index));
+                        palette_index++;
+
+                        if (palette_index == palette_size) {
+                            palette_index = 0;
+                        }
+                    }
+                }
+            }
+
+            if (buses_palette.size() > 0) {
+                map_catalogue.AddLine(buses_palette);
+                map_catalogue.AddBusRoute(buses_palette);
+            }
+        }
+
+        auto stops = catalogue.GetStopnameToStop();
+        if (stops.size() > 0) {
+            std::vector<std::string_view> stops_name;
+
+            for (const auto& [stop_name, stop] : stops) {
+
+                if (stop->buses.size() > 0) {
+                    stops_name.push_back(stop_name);
+                }
+            }
+
+            std::sort(stops_name.begin(), stops_name.end());
+
+            for (std::string_view stop_name : stops_name) {
+                Stop* stop = catalogue.GetStop(stop_name);
+                if (stop) {
+                    stops_sort.push_back(stop);
+                }
+            }
+
+            if (stops_sort.size() > 0) {
+                map_catalogue.AddStopCircle(stops_sort);
+                map_catalogue.AddStopName(stops_sort);
+            }
+        }
+    }
+
     void MapRenderer::GetMapStream(std::ostream& stream_) {
         map_.Render(stream_);
     }

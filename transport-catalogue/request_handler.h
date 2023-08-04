@@ -27,10 +27,6 @@ namespace request_handler {
         Node GetNodeStop(int id_request, StopStat stop_info);
         Node GetNodeMap(int id_request, TransportCatalogue& catalog, RenderSettings render_settings);
 
-        std::vector<std::string_view> GetSortedBusesNames(TransportCatalogue& catalog) const;
-
-
-        void ParseMapRender(MapRenderer& map_catalogue, TransportCatalogue& catalogue) const;
 
         void ParseQuery(TransportCatalogue& catalogue, std::vector<QueryStat>& stat_requests, RenderSettings& render_settings);
 
