@@ -1,44 +1,46 @@
 #pragma once
-
 #include "json.h"
 #include "transport_catalogue.h"
 #include "map_renderer.h"
-
+#include "transport_router.h"
+#include "router.h"
 
 using namespace transport_catalogue;
 
 
 namespace json {
-	//выполняет разбор JSON-данных, построенных в ходе парсинга, и формирует массив //JSON-ответов;
 
+    class JsonReader {
+    public:
+        JsonReader() = default;
+        JsonReader(Document doc);
+        JsonReader(std::istream& input);
 
-	class JsonReader {
-	public:
-		JsonReader() = default;
-		JsonReader(Document doc);
-		JsonReader(std::istream& input);
-		Stop ParseNodeStop(Node& node);
-		Bus ParseNodeBus(Node& node, TransportCatalogue& catalogue);
+        void ParseBaseRequest(const Node& root, TransportCatalogue& catalogue);
+        void ParseStatRequest(const Node& root, std::vector<QueryStat>& stat_request);
+        void ParseRenderRequest(const Node& node, map_renderer::RenderSettings& render_settings);
 
-		svg::Color WorkWithColor(Array& arr_color);
+        svg::Color WorkWithColor(Array& arr_color);
 
-		void ParseBaseRequest(const Node& root, TransportCatalogue& catalogue);
-		void ParseStatRequest(const Node& root, std::vector<QueryStat>& stat_request);
-		void ParseRenderRequest(const Node& node, map_renderer::RenderSettings& render_settings);
+        void ParseRouting(const Node& node, router::RoutingSettings& route_set);
 
-		void ParseNode(const Node& root, TransportCatalogue& catalogue,
-			std::vector<QueryStat>& stat_request,
-			map_renderer::RenderSettings& render_settings);
+        void ParseNode(const Node& root,
+            TransportCatalogue& catalogue,
+            std::vector<QueryStat>& stat_request,
+            map_renderer::RenderSettings& render_settings,
+            router::RoutingSettings& routing_settings);
 
-		void Parse(TransportCatalogue& catalogue,
-			std::vector<QueryStat>& stat_request,
-			map_renderer::RenderSettings& render_settings);
+        void Parse(TransportCatalogue& catalogue,
+            std::vector<QueryStat>& stat_request,
+            map_renderer::RenderSettings& render_settings,
+            router::RoutingSettings& routing_settings);
 
-		DistanceToStop ParseNodeDistance(Node& node, TransportCatalogue& catalogue);
+        Stop ParseNodeStop(Node& node);
+        Bus ParseNodeBus(Node& node, TransportCatalogue& catalogue);
+        DistanceToStop ParseNodeDistance(Node& node, TransportCatalogue& catalogue);
 
-		const Document& GetDocument() const;
+        const Document& get_document() const;
 
-	private:
-		Document document_;
-	};
-}// end namespace json
+    private:
+        Document document_;
+    };

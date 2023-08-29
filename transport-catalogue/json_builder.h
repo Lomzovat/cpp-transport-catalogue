@@ -89,5 +89,5 @@ namespace json {
 
             ArrayContext Value(const Node::Value& value);
         };
-    } //end namespace json_builder
+    } //end namespace builder
 }//end namespace json

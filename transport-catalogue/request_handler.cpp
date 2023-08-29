@@ -1,97 +1,192 @@
 #include "request_handler.h"
 
+using namespace std::literals;
 
 namespace request_handler {
 
+    class EdgeInfo {
+    public:
+        Node operator()(const StopItems& stop_info) {
 
-    Node RequestHandler::GetNodeStop(int id_request, StopStat stop_info) {
-        Dict result;
+
+            return Builder{}.StartDict()
+                .Key("type").Value("Wait")
+                .Key("stop_name").Value(std::string(stop_info.name))
+                .Key("time").Value(stop_info.time)
+                .EndDict()
+                .Build();
+        }
+
+        Node operator()(const BusItems& bus_info) {
+
+
+            return Builder{}.StartDict()
+                .Key("type").Value("Bus")
+                .Key("bus").Value(std::string(bus_info.bus_name))
+                .Key("span_count").Value(static_cast<int>(bus_info.span_count))
+                .Key("time").Value(bus_info.time)
+                .EndDict()
+                .Build();
+        }
+    };
+
+    Node RequestHandler::GetNodeStop(int id_request, const StopStat& stop_info) {
+        Node result;
         Array buses;
+        Builder builder;
+
         std::string not_found = "not found";
 
         if (stop_info.not_found) {
-            result.emplace("request_id", Node(id_request));
-            result.emplace("error_message", Node(not_found));
+            builder.StartDict()
+                .Key("request_id").Value(id_request)
+                .Key("error_message").Value(not_found)
+                .EndDict();
+
+            result = builder.Build();
 
         }
         else {
-            result.emplace("request_id", Node(id_request));
+            builder.StartDict()
+                .Key("request_id").Value(id_request)
+                .Key("buses").StartArray();
 
             for (std::string bus_name : stop_info.buses_name) {
-                buses.push_back(Node(bus_name));
+                builder.Value(bus_name);
             }
 
-            result.emplace("buses", Node(buses));
+            builder.EndArray().EndDict();
+
+            result = builder.Build();
         }
 
-        return Node(result);
+        return result;
     }
 
-    Node RequestHandler::GetNodeBus(int id_request, BusStat bus_info) {
-        Dict result;
+    Node RequestHandler::GetNodeBus(int id_request, const BusStat& bus_info) {
+        Node result;
         std::string not_found = "not found";
 
         if (bus_info.not_found) {
-            result.emplace("request_id", Node(id_request));
-            result.emplace("error_message", Node(not_found));
+            result = Builder{}.StartDict()
+                .Key("request_id").Value(id_request)
+                .Key("error_message").Value(not_found)
+                .EndDict()
+                .Build();
         }
         else {
-            result.emplace("request_id", Node(id_request));
-            result.emplace("curvature", Node(bus_info.curvature));
-            result.emplace("route_length", Node(bus_info.route_length));
-            result.emplace("stop_count", Node(bus_info.stops_on_route));
-            result.emplace("unique_stop_count", Node(bus_info.unique_stops));
+            result = Builder{}.StartDict()
+                .Key("request_id").Value(id_request)
+                .Key("curvature").Value(bus_info.curvature)
+                .Key("route_length").Value(bus_info.route_length)
+                .Key("stop_count").Value(bus_info.stops_on_route)
+                .Key("unique_stop_count").Value(bus_info.unique_stops)
+                .EndDict()
+                .Build();
         }
 
-        return Node(result);
+        return result;
     }
 
-    Node RequestHandler::GetNodeMap(int id_request, TransportCatalogue& catalogue, RenderSettings render_settings) {
-        Dict result;
+    Node RequestHandler::GetNodeMap(int id_request,
+        TransportCatalogue& catalogue_,
+        RenderSettings render_settings) {
+        Node result;
+
         std::ostringstream map_stream;
         std::string map_str;
 
-
         MapRenderer map_catalogue(render_settings);
-        map_catalogue.RenderSphereProjector(GetStopCoordinates(catalogue));
-        map_catalogue.ParseMapRender(map_catalogue, catalogue);
+        map_catalogue.RenderSphereProjector(GetStopCoordinates(catalogue_));
+        map_catalogue.ParseMapRender(map_catalogue, catalogue_);
         map_catalogue.GetMapStream(map_stream);
         map_str = map_stream.str();
 
-        result.emplace("request_id", Node(id_request));
-        result.emplace("map", Node(map_str));
+        result = Builder{}.StartDict()
+            .Key("request_id").Value(id_request)
+            .Key("map").Value(map_str)
+            .EndDict()
+            .Build();
 
-        return Node(result);
+        return result;
     }
 
-    void RequestHandler::ParseQuery(TransportCatalogue& catalogue, std::vector<QueryStat>& stat_requests, RenderSettings& render_settings) {
+    Node RequestHandler::GetNodeRoute(QueryStat& request,
+        TransportCatalogue& catalogue,
+        TransportRouter& routing) {
+        const auto& route_info = GetRouterInfo(request.from, request.to, catalogue, routing);
+
+        if (!route_info) {
+            return Builder{}.StartDict()
+                .Key("request_id").Value(request.id)
+                .Key("error_message").Value("not found")
+                .EndDict()
+                .Build();
+        }
+
+        Array items;
+        for (const auto& item : route_info->edges) {
+            items.emplace_back(std::visit(EdgeInfo{}, item));
+        }
+
+        return Builder{}.StartDict()
+            .Key("request_id").Value(request.id)
+            .Key("total_time").Value(route_info->total_time)
+            .Key("items").Value(items)
+            .EndDict()
+            .Build();
+    }
+
+    void RequestHandler::ParseQuery(TransportCatalogue& catalogue,
+        std::vector<QueryStat>& stat_requests,
+        RenderSettings& render_settings,
+        RoutingSettings& routing_settings) {
+
         std::vector<Node> result_request;
+        TransportRouter routing;
 
-        for (const auto& request : stat_requests) {
+        routing.SetRoutingSettings(routing_settings);
+        routing.BuildRouter(catalogue);
 
-            if (request.type == "Stop") {
-                result_request.push_back(GetNodeStop(request.id, GetStopStat(catalogue, request.name)));
-            }
-            else if (request.type == "Bus") {
-                result_request.push_back(GetNodeBus(request.id, GetBusStat(catalogue, request.name)));
-            }
-            else if (request.type == "Map") {
-                result_request.push_back(GetNodeMap(request.id, catalogue, render_settings));
-            }
+        for (QueryStat req : stat_requests) {
 
+            if (req.type == "Stop") {
+                result_request.push_back(GetNodeStop(req.id, GetStopStat(catalogue, req.name)));
+
+            }
+            else if (req.type == "Bus") {
+                result_request.push_back(GetNodeBus(req.id, GetBusStat(catalogue, req.name)));
+
+            }
+            else if (req.type == "Map") {
+                result_request.push_back(GetNodeMap(req.id, catalogue, render_settings));
+
+            }
+            else if (req.type == "Route") {
+                result_request.push_back(GetNodeRoute(req, catalogue, routing));
+            }
         }
 
         document_out = Document{ Node(result_request) };
     }
 
 
+    std::optional<RouteInfo> RequestHandler::GetRouterInfo(std::string_view start,
+        std::string_view end,
+        TransportCatalogue& catalogue,
+        TransportRouter& routing) const {
 
-    std::vector<geo::Coordinates> RequestHandler::GetStopCoordinates(TransportCatalogue& catalog) const {
+        return routing.GetRouteInfo(routing.GetRouterByStop(catalogue.GetStop(start))->bus_wait_start,
+            routing.GetRouterByStop(catalogue.GetStop(end))->bus_wait_start);
+    }
+
+    std::vector<geo::Coordinates> RequestHandler::GetStopCoordinates(TransportCatalogue& catalogue_) const {
 
         std::vector<geo::Coordinates> stops_coordinates;
-        auto buses = catalog.GetBusnameToBus();
+        auto buses = catalogue_.GetBusnameToBus();
 
         for (auto& [busname, bus] : buses) {
+
             for (auto& stop : bus->stops_on_route) {
                 geo::Coordinates coordinates;
                 coordinates.latitude = stop->coordinates.latitude;
@@ -134,9 +229,10 @@ namespace request_handler {
 
             stop_info.name = stop->name;
             stop_info.not_found = false;
-            unique_buses = catalogue.StopGetUniqueBuses(stop);
+            unique_buses = catalogue.StopGetUniqBuses(stop);
 
             if (unique_buses.size() > 0) {
+
                 for (const Bus* bus : unique_buses) {
                     stop_info.buses_name.push_back(bus->name);
                 }
@@ -156,4 +252,5 @@ namespace request_handler {
     const Document& RequestHandler::GetDocument() const {
         return document_out;
     }
-}
+
+}//end namespace request_handler

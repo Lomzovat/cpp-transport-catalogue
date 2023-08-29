@@ -82,15 +82,16 @@ namespace map_renderer {
         void AddStopCircle(std::vector<Stop*>& stops_name);
         void AddStopName(std::vector<Stop*>& stops_name);
 
+
         std::vector<std::string_view> GetSortedBusesNames(TransportCatalogue& catalog) const;
-        void ParseMapRender(MapRenderer& map_catalogue, TransportCatalogue& catalogue) const;
+        void ParseMapRender(MapRenderer& map_catalogue, TransportCatalogue& catalogue_) const;
 
         void GetMapStream(std::ostream& stream_);
 
     private:
         SphereProjector sphere_projector;
         RenderSettings& render_settings_;
-        svg::Document map_;
+        svg::Document map_svg;
     };
 
     template <typename InputIt>
@@ -148,5 +149,6 @@ namespace map_renderer {
 
         }
     }
-}
+
+}//end namespace map_renderer
 

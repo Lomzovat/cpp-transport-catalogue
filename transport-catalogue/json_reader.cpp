@@ -1,16 +1,15 @@
 #include "json_reader.h"
 
-
 using namespace transport_catalogue;
 
 
 namespace json {
 
-    JsonReader::JsonReader(Document document) :
-        document_(std::move(document))
+    JsonReader::JsonReader(Document doc) :
+        document_(std::move(doc))
     {}
     JsonReader::JsonReader(std::istream& input) :
-        document_(Load(input))
+        document_(json::Load(input))
     {}
 
     Stop JsonReader::ParseNodeStop(Node& node) {
@@ -23,6 +22,7 @@ namespace json {
             stop.coordinates.latitude = stop_node.at("latitude").AsDouble();
             stop.coordinates.longitude = stop_node.at("longitude").AsDouble();
         }
+
         return stop;
     }
 
@@ -52,27 +52,33 @@ namespace json {
 
     Bus JsonReader::ParseNodeBus(Node& node, TransportCatalogue& catalogue) {
         Bus bus;
-        Array bus_stops;
         Dict bus_node;
+        Array bus_stops;
 
         if (node.IsDict()) {
             bus_node = node.AsDict();
             bus.name = bus_node.at("name").AsString();
             bus.is_roundtrip = bus_node.at("is_roundtrip").AsBool();
+
             bus_stops = bus_node.at("stops").AsArray();
+
             for (auto& stop : bus_stops) {
                 bus.stops_on_route.push_back(catalogue.GetStop(stop.AsString()));
             }
+
             if (!bus.is_roundtrip) {
                 size_t size = bus.stops_on_route.size() - 1;
+
                 for (size_t i = size; i > 0; i--) {
                     bus.stops_on_route.push_back(bus.stops_on_route[i - 1]);
                 }
             }
+
         }
         else {
             std::cout << "error" << std::endl;
         }
+
         return bus;
     }
 
@@ -86,7 +92,8 @@ namespace json {
 
         if (root.IsArray()) {
             base_requests = root.AsArray();
-            for (auto& node : base_requests) {
+
+            for (Node& node : base_requests) {
                 if (node.IsDict()) {
                     request_map = node.AsDict();
                     req_node = request_map.at("type");
@@ -101,23 +108,25 @@ namespace json {
                             std::cout << "base_requests are invalid";
                         }
                     }
+
                 }
                 else {
                     std::cout << "error";
                 }
             }
 
-            for (auto& stop : stops) {
+            for (auto stop : stops) {
                 catalogue.AddStop(ParseNodeStop(stop));
             }
 
-            for (auto& stop : stops) {
+            for (auto stop : stops) {
                 catalogue.AddDistance(ParseNodeDistance(stop, catalogue));
             }
 
-            for (auto& bus : buses) {
+            for (auto bus : buses) {
                 catalogue.AddBus(ParseNodeBus(bus, catalogue));
             }
+
         }
         else {
             std::cout << "error";
@@ -132,29 +141,39 @@ namespace json {
         if (node.IsArray()) {
             stat_requests = node.AsArray();
 
-            for (auto& req_node : stat_requests) {
+            for (Node req_node : stat_requests) {
 
                 if (req_node.IsDict()) {
                     request_map = req_node.AsDict();
                     req.id = request_map.at("id").AsInt();
                     req.type = request_map.at("type").AsString();
 
-                    if (req.type != "Map") {
+                    if ((req.type == "Bus") || (req.type == "Stop")) {
                         req.name = request_map.at("name").AsString();
+                        req.from = "";
+                        req.to = "";
                     }
                     else {
                         req.name = "";
+                        if (req.type == "Route") {
+                            req.from = request_map.at("from").AsString();
+                            req.to = request_map.at("to").AsString();
+                        }
+                        else {
+                            req.from = "";
+                            req.to = "";
+                        }
                     }
+
                     stat_request.push_back(req);
                 }
             }
+
         }
         else {
             std::cout << "error";
         }
     }
-
-
 
     void JsonReader::ParseRenderRequest(const Node& node, map_renderer::RenderSettings& render_settings) {
         Dict render_map;
@@ -214,7 +233,6 @@ namespace json {
         }
     }
 
-
     svg::Color JsonReader::WorkWithColor(Array& arr_color) {
         svg::Color color_;
         uint8_t red_ = arr_color[0].AsInt();
@@ -231,9 +249,28 @@ namespace json {
         return color_;
     }
 
+    void JsonReader::ParseRouting(const Node& node, router::RoutingSettings& route_set) {
+        Dict route;
+
+        if (node.IsDict()) {
+            route = node.AsDict();
+
+            route_set.bus_wait_time = route.at("bus_wait_time").AsDouble();
+            route_set.bus_velocity = route.at("bus_velocity").AsDouble();
 
 
-    void JsonReader::ParseNode(const Node& root, TransportCatalogue& catalogue, std::vector<QueryStat>& stat_request, map_renderer::RenderSettings& render_settings) {
+        }
+        else {
+            std::cout << "routing settings is not map";
+        }
+
+    }
+
+    void JsonReader::ParseNode(const Node& root,
+        TransportCatalogue& catalogue,
+        std::vector<QueryStat>& stat_request,
+        map_renderer::RenderSettings& render_settings,
+        router::RoutingSettings& routing_settings) {
         Dict root_dictionary;
 
         if (root.IsDict()) {
@@ -242,6 +279,7 @@ namespace json {
             ParseBaseRequest(root_dictionary.at("base_requests"), catalogue);
             ParseStatRequest(root_dictionary.at("stat_requests"), stat_request);
             ParseRenderRequest(root_dictionary.at("render_settings"), render_settings);
+            ParseRouting(root_dictionary.at("routing_settings"), routing_settings);
 
         }
         else {
@@ -249,10 +287,15 @@ namespace json {
         }
     }
 
-    void JsonReader::Parse(TransportCatalogue& catalogue, std::vector<QueryStat>& stat_request, map_renderer::RenderSettings& render_settings) {
+    void JsonReader::Parse(TransportCatalogue& catalogue,
+        std::vector<QueryStat>& stat_request,
+        map_renderer::RenderSettings& render_settings,
+        router::RoutingSettings& routing_settings) {
         ParseNode(document_.GetRoot(),
             catalogue,
             stat_request,
-            render_settings);
+            render_settings,
+            routing_settings);
     }
-} // end namespace json
+
+}//end namespace json

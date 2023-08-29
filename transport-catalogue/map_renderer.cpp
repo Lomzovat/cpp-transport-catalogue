@@ -4,12 +4,13 @@ using namespace std::literals;
 
 namespace map_renderer {
 
-
     bool SphereProjector::IsZero(double value) {
         return std::abs(value) < EPSILON;
     }
 
-    MapRenderer::MapRenderer(RenderSettings& render_settings) : render_settings_(render_settings) {}
+    MapRenderer::MapRenderer(RenderSettings& render_settings) :
+        render_settings_(render_settings)
+    {}
 
     svg::Point SphereProjector::operator()(geo::Coordinates coords) const {
         return { (coords.longitude - min_lon_) * zoom_coeff_ + padding_,
@@ -47,7 +48,6 @@ namespace map_renderer {
     void MapRenderer::RenderLineProperties(svg::Polyline& polyline,
         int line_number) const {
 
-
         polyline.SetStrokeColor(GetColor(line_number));
         polyline.SetFillColor("none"s);
         polyline.SetStrokeWidth(render_settings_.line_width_);
@@ -58,7 +58,6 @@ namespace map_renderer {
     void MapRenderer::RenderBusTextProperties(svg::Text& text,
         const std::string& name,
         svg::Point position) const {
-
 
         text.SetPosition(position);
         text.SetOffset({ render_settings_.bus_label_offset_.first,
@@ -96,7 +95,6 @@ namespace map_renderer {
 
     void MapRenderer::RenderStopsCirclesProperties(svg::Circle& circle,
         svg::Point position) const {
-
 
         circle.SetCenter(position);
         circle.SetRadius(render_settings_.stop_radius_);
@@ -166,7 +164,7 @@ namespace map_renderer {
             if (!bus_empty) {
                 RenderLineProperties(bus_line,
                     palette);
-                map_.Add(bus_line);
+                map_svg.Add(bus_line);
             }
 
             stops_geo_coords.clear();
@@ -200,38 +198,38 @@ namespace map_renderer {
                     RenderBusTextAddProperties(route_name_roundtrip,
                         std::string(bus->name),
                         sphere_projector(stops_geo_coords[0]));
-                    map_.Add(route_name_roundtrip);
+                    map_svg.Add(route_name_roundtrip);
 
                     RenderBusTextColorProperties(route_title_roundtrip,
                         std::string(bus->name),
                         palette,
                         sphere_projector(stops_geo_coords[0]));
-                    map_.Add(route_title_roundtrip);
+                    map_svg.Add(route_title_roundtrip);
 
                 }
                 else {
                     RenderBusTextAddProperties(route_name_roundtrip,
                         std::string(bus->name),
                         sphere_projector(stops_geo_coords[0]));
-                    map_.Add(route_name_roundtrip);
+                    map_svg.Add(route_name_roundtrip);
 
                     RenderBusTextColorProperties(route_title_roundtrip,
                         std::string(bus->name),
                         palette,
                         sphere_projector(stops_geo_coords[0]));
-                    map_.Add(route_title_roundtrip);
+                    map_svg.Add(route_title_roundtrip);
 
                     if (stops_geo_coords[0] != stops_geo_coords[stops_geo_coords.size() / 2]) {
                         RenderBusTextAddProperties(route_name_notroundtrip,
                             std::string(bus->name),
                             sphere_projector(stops_geo_coords[stops_geo_coords.size() / 2]));
-                        map_.Add(route_name_notroundtrip);
+                        map_svg.Add(route_name_notroundtrip);
 
                         RenderBusTextColorProperties(route_title_notroundtrip,
                             std::string(bus->name),
                             palette,
                             sphere_projector(stops_geo_coords[stops_geo_coords.size() / 2]));
-                        map_.Add(route_title_notroundtrip);
+                        map_svg.Add(route_title_notroundtrip);
                     }
                 }
             }
@@ -254,7 +252,7 @@ namespace map_renderer {
 
                 RenderStopsCirclesProperties(icon,
                     sphere_projector(coordinates));
-                map_.Add(icon);
+                map_svg.Add(icon);
             }
         }
     }
@@ -275,12 +273,12 @@ namespace map_renderer {
                 RenderStopsTextAddProperties(svg_stop_name,
                     stop_info->name,
                     sphere_projector(coordinates));
-                map_.Add(svg_stop_name);
+                map_svg.Add(svg_stop_name);
 
                 RenderStopsTextColorProperties(svg_stop_name_title,
                     stop_info->name,
                     sphere_projector(coordinates));
-                map_.Add(svg_stop_name_title);
+                map_svg.Add(svg_stop_name_title);
             }
         }
     }
@@ -305,8 +303,6 @@ namespace map_renderer {
         }
     }
 
-
-
     void MapRenderer::ParseMapRender(MapRenderer& map_catalogue, TransportCatalogue& catalogue) const {
         std::vector<std::pair<Bus*, int>> buses_palette;
         std::vector<Stop*> stops_sort;
@@ -314,6 +310,7 @@ namespace map_renderer {
         int palette_index = 0;
 
         palette_size = map_catalogue.GetPaletteSize();
+
         if (palette_size == 0) {
             std::cout << "color palette is empty";
             return;
@@ -347,7 +344,7 @@ namespace map_renderer {
         if (stops.size() > 0) {
             std::vector<std::string_view> stops_name;
 
-            for (const auto& [stop_name, stop] : stops) {
+            for (auto& [stop_name, stop] : stops) {
 
                 if (stop->buses.size() > 0) {
                     stops_name.push_back(stop_name);
@@ -370,7 +367,9 @@ namespace map_renderer {
         }
     }
 
+
     void MapRenderer::GetMapStream(std::ostream& stream_) {
-        map_.Render(stream_);
+        map_svg.Render(stream_);
     }
-} //end namespace map_renderer
+
+}//end namespace map_renderer

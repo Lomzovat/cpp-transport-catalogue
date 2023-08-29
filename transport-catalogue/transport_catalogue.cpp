@@ -4,7 +4,6 @@
 namespace transport_catalogue {
 
     void TransportCatalogue::AddStop(const Stop& stop) {
-
         stops.push_back(std::move(stop));
         stopname_to_stop[stops.back().name] = &stops.back();
     }
@@ -24,12 +23,11 @@ namespace transport_catalogue {
     }
 
     void TransportCatalogue::AddDistance(const DistanceToStop& distances) {
+
         for (const auto& [key, value] : distances) {
             distance_to_stop[key] = value;
         }
     }
-
-
 
     Bus* TransportCatalogue::GetBus(std::string_view bus_name) {
         if (busname_to_bus.empty()) {
@@ -45,10 +43,10 @@ namespace transport_catalogue {
     }
 
     Stop* TransportCatalogue::GetStop(std::string_view stop_name) {
-        if (stopname_to_stop.empty())
-        {
+        if (stopname_to_stop.empty()) {
             return nullptr;
         }
+
         if (stopname_to_stop.count(stop_name)) {
             return stopname_to_stop.at(stop_name);
         }
@@ -57,7 +55,7 @@ namespace transport_catalogue {
         }
     }
 
-    std::unordered_map<std::string_view, Bus*> TransportCatalogue::GetBusnameToBus() const {
+    std::unordered_map<std::string_view, Bus*>  TransportCatalogue::GetBusnameToBus() const {
         return busname_to_bus;
     }
 
@@ -67,7 +65,6 @@ namespace transport_catalogue {
 
     std::unordered_set<const Stop*> TransportCatalogue::GetUniqStops(Bus* bus) {
         std::unordered_set<const Stop*> unique_stops;
-
         unique_stops.insert(bus->stops_on_route.begin(), bus->stops_on_route.end());
 
         return unique_stops;
@@ -81,20 +78,20 @@ namespace transport_catalogue {
             std::plus<>{},
             [](const Stop* lhs, const Stop* rhs) {
                 return geo::ComputeDistance({ (*lhs).coordinates.latitude,
-                             (*lhs).coordinates.longitude },
-                    { (*rhs).coordinates.latitude, (*rhs).coordinates.longitude });
+                                              (*lhs).coordinates.longitude }, { (*rhs).coordinates.latitude,
+                                                                  (*rhs).coordinates.longitude });
             });
     }
 
-    std::unordered_set<const Bus*> TransportCatalogue::StopGetUniqueBuses(Stop* stop) {
+    std::unordered_set<const Bus*> TransportCatalogue::StopGetUniqBuses(Stop* stop) {
         std::unordered_set<const Bus*> unique_stops;
-
         unique_stops.insert(stop->buses.begin(), stop->buses.end());
 
         return unique_stops;
     }
 
-    size_t TransportCatalogue::GetDistanceStop(const Stop* begin, const Stop* finish) {
+    size_t TransportCatalogue::GetDistanceStop(const Stop* begin, const Stop* finish) const {
+
         if (distance_to_stop.empty()) {
             return 0;
         }
@@ -112,12 +109,12 @@ namespace transport_catalogue {
     size_t TransportCatalogue::GetDistanceForBus(Bus* bus) {
         size_t distance = 0;
         auto stops_size = bus->stops_on_route.size() - 1;
+
         for (int i = 0; i < static_cast<int>(stops_size); i++) {
             distance += GetDistanceStop(bus->stops_on_route[i], bus->stops_on_route[i + 1]);
         }
+
         return distance;
     }
-
-
 
 }//end namespace transport_catalogue

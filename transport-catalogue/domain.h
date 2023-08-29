@@ -1,10 +1,12 @@
 #pragma once
 
 #include <algorithm>
-#include <string>
 #include <vector>
+#include <string>
+#include <variant>
 
 #include "geo.h"
+#include "graph.h"
 
 //классы основных сущностей, описывают автобусы и остановки;
 
@@ -50,6 +52,35 @@ namespace domain {
         int id;
         std::string type;
         std::string name;
+        std::string from;
+        std::string to;
     };
 
-} // end namespace domain
+    struct StopItems {
+        std::string_view name;
+        double time = 0.0;
+    };
+
+    struct BusItems {
+        std::string_view bus_name;
+        size_t span_count = 0.0;
+        double time = 0.0;
+    };
+
+    struct RoutingSettings {
+        double bus_wait_time = 0.0;
+        double bus_velocity = 0.0;
+    };
+
+    struct RouterByStop {
+        graph::VertexId bus_wait_start;
+        graph::VertexId bus_wait_end;
+    };
+
+    struct RouteInfo {
+        double total_time = 0.0;
+        std::vector<std::variant<StopItems, BusItems>> edges;
+    };
+
+}//end namespace domain
+
