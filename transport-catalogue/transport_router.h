@@ -18,23 +18,21 @@ namespace router {
     class TransportRouter {
     public:
         void SetRoutingSettings(RoutingSettings routing_settings);
-        const RoutingSettings& GetRoutingSettings() const;
-
         void BuildRouter(TransportCatalogue& transport_catalogue);
-
-        const DirectedWeightedGraph<double>& GetGraph() const;
-        const Router<double>& GetRouter() const;
-        const std::variant<StopItems, BusItems>& GetEdge(EdgeId id) const;
 
         std::optional<RouterByStop> GetRouterByStop(Stop* stop) const;
         std::optional<RouteInfo> GetRouteInfo(VertexId start, VertexId end) const;
 
+    private:
+        const RoutingSettings& GetRoutingSettings() const;
+        const DirectedWeightedGraph<double>& GetGraph() const;
+        const Router<double>& GetRouter() const;
+
+        const std::variant<StopItems, BusItems>& GetEdge(EdgeId id) const;
+
         const std::unordered_map<Stop*, RouterByStop>& GetStopToVertex() const;
         const std::unordered_map<EdgeId, std::variant<StopItems, BusItems>>& GetEdgeIdToEdge() const;
 
-
-
-    private:
         std::unordered_map<Stop*, RouterByStop> stop_to_router_;
         std::unordered_map<EdgeId, std::variant<StopItems, BusItems>> edge_id_to_edge_;
 
@@ -83,3 +81,4 @@ namespace router {
     }
 
 }//end namespace router
+
