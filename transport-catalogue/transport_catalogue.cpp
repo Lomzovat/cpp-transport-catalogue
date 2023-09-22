@@ -1,5 +1,4 @@
 #include "transport_catalogue.h"
-#include <execution>
 
 namespace transport_catalogue {
 
@@ -22,12 +21,12 @@ namespace transport_catalogue {
         bus_buf->route_length = GetDistanceForBus(bus_buf);
     }
 
-    void TransportCatalogue::AddDistance(const DistanceToStop& distances) {
-
-        for (const auto& [key, value] : distances) {
-            distance_to_stop[key] = value;
+    void TransportCatalogue::AddDistance(Stop* from, Stop* to, size_t distance) {
+        if (from != nullptr && to != nullptr) {
+            distance_to_stop[{from, to}] = distance;
         }
     }
+
 
     Bus* TransportCatalogue::GetBus(std::string_view bus_name) {
         if (busname_to_bus.empty()) {
@@ -39,6 +38,12 @@ namespace transport_catalogue {
         }
         else {
             return nullptr;
+        }
+    }
+    void TransportCatalogue::AddDistanceAsMap(const DistanceToStop& distances) {
+
+        for (const auto& [key, value] : distances) {
+            distance_to_stop[key] = value;
         }
     }
 
@@ -55,11 +60,19 @@ namespace transport_catalogue {
         }
     }
 
-    std::unordered_map<std::string_view, Bus*>  TransportCatalogue::GetBusnameToBus() const {
+    std::deque<Stop> TransportCatalogue::GetStops() const {
+        return stops;
+    }
+
+    std::deque<Bus> TransportCatalogue::GetBuses() const {
+        return buses;
+    }
+
+    std::unordered_map<std::string_view, Bus*> TransportCatalogue::GetBusnameToBus() const {
         return busname_to_bus;
     }
 
-    std::unordered_map<std::string_view, Stop*> TransportCatalogue::GetStopnameToStop() const {
+    std::unordered_map<std::string_view, Stop*>  TransportCatalogue::GetStopnameToStop() const {
         return stopname_to_stop;
     }
 
@@ -90,6 +103,10 @@ namespace transport_catalogue {
         return unique_stops;
     }
 
+    DistanceToStop TransportCatalogue::GetDistance() const {
+        return distance_to_stop;
+    }
+
     size_t TransportCatalogue::GetDistanceStop(const Stop* begin, const Stop* finish) const {
 
         if (distance_to_stop.empty()) {
@@ -116,5 +133,7 @@ namespace transport_catalogue {
 
         return distance;
     }
+
+
 
 }//end namespace transport_catalogue

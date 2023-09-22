@@ -8,9 +8,8 @@
 #include "geo.h"
 #include "graph.h"
 
-//классы основных сущностей, описывают автобусы и остановки;
-
 namespace domain {
+
 
     struct Bus;
 
@@ -30,7 +29,6 @@ namespace domain {
         double route_length;
 
         bool is_roundtrip;
-
     };
 
     struct BusStat {
@@ -45,7 +43,7 @@ namespace domain {
     struct StopStat {
         std::string_view name;
         bool not_found;
-        std::vector <std::string> buses_name;
+        std::vector<std::string> buses_name;
     };
 
     struct QueryStat {
@@ -63,7 +61,7 @@ namespace domain {
 
     struct BusItems {
         std::string_view bus_name;
-        size_t span_count = 0.0;
+        size_t span_count = 0;
         double time = 0.0;
     };
 
@@ -83,4 +81,3 @@ namespace domain {
     };
 
 }//end namespace domain
-

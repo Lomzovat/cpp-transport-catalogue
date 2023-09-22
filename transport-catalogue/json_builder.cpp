@@ -217,6 +217,6 @@ namespace json {
 
             return root_;
         }
-    } //end namespace builder
+    } //end namespace json_builder
 
 }//end namespace json

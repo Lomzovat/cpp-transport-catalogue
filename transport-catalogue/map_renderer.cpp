@@ -41,6 +41,7 @@ namespace map_renderer {
         return render_settings_.color_palette_.size();
     }
 
+
     svg::Color MapRenderer::GetColor(int line_number) const {
         return render_settings_.color_palette_[line_number];
     }
@@ -366,7 +367,6 @@ namespace map_renderer {
             }
         }
     }
-
 
     void MapRenderer::GetMapStream(std::ostream& stream_) {
         map_svg.Render(stream_);

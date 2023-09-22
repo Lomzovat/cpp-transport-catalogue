@@ -1,12 +1,13 @@
 #pragma once
 #include "json.h"
+#include "serialization.h"
 #include "transport_catalogue.h"
 #include "map_renderer.h"
 #include "transport_router.h"
 #include "router.h"
 
 using namespace transport_catalogue;
-
+using namespace serialization;
 
 namespace json {
 
@@ -23,24 +24,25 @@ namespace json {
         svg::Color WorkWithColor(Array& arr_color);
 
         void ParseRouting(const Node& node, router::RoutingSettings& route_set);
+        void ParseSerialization(const Node& node, serialization::SerializationSettings& serialization_set);
 
-        void ParseNode(const Node& root,
-            TransportCatalogue& catalogue,
-            std::vector<QueryStat>& stat_request,
-            map_renderer::RenderSettings& render_settings,
-            router::RoutingSettings& routing_settings);
 
-        void Parse(TransportCatalogue& catalogue,
-            std::vector<QueryStat>& stat_request,
+        void ParseNode(TransportCatalogue& catalogue,
             map_renderer::RenderSettings& render_settings,
-            router::RoutingSettings& routing_settings);
+            router::RoutingSettings& routing_settings,
+            serialization::SerializationSettings& serialization_settings);
+
+        void ParseRequest(std::vector<QueryStat>& stat_request,
+            serialization::SerializationSettings& serialization_settings);
 
         Stop ParseNodeStop(Node& node);
         Bus ParseNodeBus(Node& node, TransportCatalogue& catalogue);
         DistanceToStop ParseNodeDistance(Node& node, TransportCatalogue& catalogue);
 
-        const Document& get_document() const;
+        const Document& GetDocument() const;
 
     private:
         Document document_;
     };
+
+}//end namespace json

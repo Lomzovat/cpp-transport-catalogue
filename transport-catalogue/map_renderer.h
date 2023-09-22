@@ -82,7 +82,6 @@ namespace map_renderer {
         void AddStopCircle(std::vector<Stop*>& stops_name);
         void AddStopName(std::vector<Stop*>& stops_name);
 
-
         std::vector<std::string_view> GetSortedBusesNames(TransportCatalogue& catalog) const;
         void ParseMapRender(MapRenderer& map_catalogue, TransportCatalogue& catalogue_) const;
 

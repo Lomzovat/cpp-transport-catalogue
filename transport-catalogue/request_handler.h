@@ -39,6 +39,8 @@ namespace request_handler {
             RenderSettings& render_settings,
             RoutingSettings& route_settings);
 
+
+
         const Document& GetDocument() const;
 
     private:
