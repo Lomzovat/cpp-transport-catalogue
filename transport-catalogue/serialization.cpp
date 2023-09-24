@@ -2,61 +2,60 @@
 
 namespace serialization {
     template <typename It>
-    uint32_t CalculateId(It start, It end, std::string_view name) {
+    uint32_t FindStopId(It start, It end, std::string_view name) {
 
         auto stop_it = std::find_if(start, end, [&name](const domain::Stop stop) {return stop.name == name; });
         return std::distance(start, stop_it);
     }
 
-    transport_catalogue_protobuf::TransportCatalogue TransportCatalogueSerialization(const transport_catalogue::TransportCatalogue& transport_catalogue) {
+    transport_catalogue_protobuf::Stop SerializeStops(const Stop& stop) {
+        transport_catalogue_protobuf::Stop stop_proto;
 
+        stop_proto.set_id(stop.id);
+        stop_proto.set_name(stop.name);
+        stop_proto.mutable_coordinates()->set_latitude(stop.coordinates.latitude);
+        stop_proto.mutable_coordinates()->set_longitude(stop.coordinates.longitude);
+        return stop_proto;
+    }
+
+    transport_catalogue_protobuf::Bus SerializeBuses(const Bus& bus, const transport_catalogue::TransportCatalogue& transport_catalogue) {
+        transport_catalogue_protobuf::Bus bus_proto;
+
+        bus_proto.set_name(bus.name);
+
+        for (auto stop : bus.stops_on_route) {
+            const auto& stops = transport_catalogue.GetStops();
+            uint32_t stop_id = FindStopId(stops.cbegin(),
+                stops.cend(),
+                stop->name);
+            bus_proto.add_stops_on_route(stop_id);
+        }
+        bus_proto.set_is_roundtrip(bus.is_roundtrip);
+        bus_proto.set_route_length(bus.route_length);
+
+        return std::move(bus_proto);
+    }
+
+
+    transport_catalogue_protobuf::TransportCatalogue SerializeTransportCatalogue(const transport_catalogue::TransportCatalogue& transport_catalogue) {
         transport_catalogue_protobuf::TransportCatalogue transport_catalogue_proto;
-
         const auto& stops = transport_catalogue.GetStops();
         const auto& buses = transport_catalogue.GetBuses();
         const auto& distances = transport_catalogue.GetDistance();
 
-        int id = 0;
         for (const auto& stop : stops) {
-
-            transport_catalogue_protobuf::Stop stop_proto;
-
-            stop_proto.set_id(id);
-            stop_proto.set_name(stop.name);
-            stop_proto.mutable_coordinates()->set_latitude(stop.coordinates.latitude);
-            stop_proto.mutable_coordinates()->set_longitude(stop.coordinates.longitude);
-
-            *transport_catalogue_proto.add_stops() = std::move(stop_proto);
-
-            ++id;
+            *transport_catalogue_proto.add_stops() = SerializeStops(stop);
         }
-
         for (const auto& bus : buses) {
-
-            transport_catalogue_protobuf::Bus bus_proto;
-
-            bus_proto.set_name(bus.name);
-
-            for (auto stop : bus.stops_on_route) {
-                uint32_t stop_id = CalculateId(stops.cbegin(),
-                    stops.cend(),
-                    stop->name);
-                bus_proto.add_stops_on_route(stop_id);
-            }
-
-            bus_proto.set_is_roundtrip(bus.is_roundtrip);
-            bus_proto.set_route_length(bus.route_length);
-
-            *transport_catalogue_proto.add_buses() = std::move(bus_proto);
+            *transport_catalogue_proto.add_buses() = SerializeBuses(bus, transport_catalogue);
         }
-
 
         for (const auto [stop_pair, distance] : distances) {
             transport_catalogue_protobuf::Distance& distance_proto = *transport_catalogue_proto.add_distances();
-            distance_proto.set_from(CalculateId(stops.cbegin(),
+            distance_proto.set_from(FindStopId(stops.cbegin(),
                 stops.cend(),
                 stop_pair.first->name));
-            distance_proto.set_to(CalculateId(stops.cbegin(),
+            distance_proto.set_to(FindStopId(stops.cbegin(),
                 stops.cend(),
                 stop_pair.second->name));
             distance_proto.set_distance(distance);
@@ -65,26 +64,33 @@ namespace serialization {
         return transport_catalogue_proto;
     }
 
-
-    transport_catalogue::TransportCatalogue TransportCatalogueDeserialization(const transport_catalogue_protobuf::TransportCatalogue& transport_catalogue_proto) {
-
-        transport_catalogue::TransportCatalogue transport_catalogue;
-
+    void DeserializeStop(const transport_catalogue_protobuf::TransportCatalogue& transport_catalogue_proto, transport_catalogue::TransportCatalogue& transport_catalogue) {
         const auto& stops_proto = transport_catalogue_proto.stops();
-
-
-
         for (const auto& stop : stops_proto) {
-
             domain::Stop tc_stop;
-
             tc_stop.name = stop.name();
             tc_stop.coordinates.latitude = stop.coordinates().latitude();
             tc_stop.coordinates.longitude = stop.coordinates().longitude();
-
             transport_catalogue.AddStop(std::move(tc_stop));
         }
+    }
 
+    void DeserializeBuses(const transport_catalogue_protobuf::TransportCatalogue& transport_catalogue_proto, transport_catalogue::TransportCatalogue& transport_catalogue) {
+        const auto& buses_proto = transport_catalogue_proto.buses();
+        for (const auto& bus_proto : buses_proto) {
+            domain::Bus tc_bus;
+            tc_bus.name = bus_proto.name();
+            tc_bus.stops_on_route.reserve(bus_proto.stops_on_route().size());
+            for (const auto& stop_id : bus_proto.stops_on_route()) {
+                tc_bus.stops_on_route.push_back(transport_catalogue.GetStop(transport_catalogue_proto.stops(stop_id).name()));
+            }
+            tc_bus.is_roundtrip = bus_proto.is_roundtrip();
+            tc_bus.route_length = bus_proto.route_length();
+
+            transport_catalogue.AddBus(std::move(tc_bus));
+        }
+    }
+    void DeserializeDistance(const transport_catalogue_protobuf::TransportCatalogue& transport_catalogue_proto, transport_catalogue::TransportCatalogue& transport_catalogue) {
         const auto& tc_stops = transport_catalogue.GetStops();
 
         const auto& distances_proto = transport_catalogue_proto.distances();
@@ -94,29 +100,19 @@ namespace serialization {
             transport_catalogue.AddDistance(from, to, distance.distance());
 
         }
+    }
 
-        const auto& buses_proto = transport_catalogue_proto.buses();
-        for (const auto& bus_proto : buses_proto) {
 
-            domain::Bus tc_bus;
-
-            tc_bus.name = bus_proto.name();
-
-            for (auto stop_id : bus_proto.stops_on_route()) {
-                auto name = tc_stops[stop_id].name;
-                tc_bus.stops_on_route.push_back(transport_catalogue.GetStop(name));
-            }
-
-            tc_bus.is_roundtrip = bus_proto.is_roundtrip();
-            tc_bus.route_length = bus_proto.route_length();
-
-            transport_catalogue.AddBus(std::move(tc_bus));
-        }
+    transport_catalogue::TransportCatalogue DeserializeTransportCatalogue(const transport_catalogue_protobuf::TransportCatalogue& transport_catalogue_proto) {
+        transport_catalogue::TransportCatalogue transport_catalogue;
+        DeserializeStop(transport_catalogue_proto, transport_catalogue);
+        DeserializeDistance(transport_catalogue_proto, transport_catalogue);
+        DeserializeBuses(transport_catalogue_proto, transport_catalogue);
 
         return transport_catalogue;
     }
 
-    transport_catalogue_protobuf::Color ColorSerialization(const svg::Color& tc_color) {
+    transport_catalogue_protobuf::Color SerializeColor(const svg::Color& tc_color) {
 
         transport_catalogue_protobuf::Color color_proto;
 
@@ -148,7 +144,7 @@ namespace serialization {
         return color_proto;
     }
 
-    svg::Color ColorDeserialization(const transport_catalogue_protobuf::Color& color_proto) {
+    svg::Color DeserializeColor(const transport_catalogue_protobuf::Color& color_proto) {
 
         svg::Color color;
 
@@ -178,7 +174,7 @@ namespace serialization {
         return color;
     }
 
-    transport_catalogue_protobuf::RenderSettings RenderSettingsSerialization(const map_renderer::RenderSettings& render_settings) {
+    transport_catalogue_protobuf::RenderSettings SerializeRenderSettings(const map_renderer::RenderSettings& render_settings) {
 
         transport_catalogue_protobuf::RenderSettings render_settings_proto;
 
@@ -202,18 +198,18 @@ namespace serialization {
         stop_label_offset_proto.set_y(render_settings.stop_label_offset_.second);
 
         *render_settings_proto.mutable_stop_label_offset_() = std::move(stop_label_offset_proto);
-        *render_settings_proto.mutable_underlayer_color_() = std::move(ColorSerialization(render_settings.underlayer_color_));
+        *render_settings_proto.mutable_underlayer_color_() = std::move(SerializeColor(render_settings.underlayer_color_));
         render_settings_proto.set_underlayer_width_(render_settings.underlayer_width_);
 
         const auto& colors = render_settings.color_palette_;
         for (const auto& color : colors) {
-            *render_settings_proto.add_color_palette_() = std::move(ColorSerialization(color));
+            *render_settings_proto.add_color_palette_() = std::move(SerializeColor(color));
         }
 
         return render_settings_proto;
     }
 
-    map_renderer::RenderSettings RenderSettingsDeserialization(const transport_catalogue_protobuf::RenderSettings& render_settings_proto) {
+    map_renderer::RenderSettings DeserializeRenderSettings(const transport_catalogue_protobuf::RenderSettings& render_settings_proto) {
 
         map_renderer::RenderSettings render_settings;
 
@@ -232,17 +228,17 @@ namespace serialization {
         render_settings.stop_label_offset_.first = render_settings_proto.stop_label_offset_().x();
         render_settings.stop_label_offset_.second = render_settings_proto.stop_label_offset_().y();
 
-        render_settings.underlayer_color_ = ColorDeserialization(render_settings_proto.underlayer_color_());
+        render_settings.underlayer_color_ = DeserializeColor(render_settings_proto.underlayer_color_());
         render_settings.underlayer_width_ = render_settings_proto.underlayer_width_();
 
         for (const auto& color_proto : render_settings_proto.color_palette_()) {
-            render_settings.color_palette_.push_back(ColorDeserialization(color_proto));
+            render_settings.color_palette_.push_back(DeserializeColor(color_proto));
         }
 
         return render_settings;
     }
 
-    transport_catalogue_protobuf::RoutingSettings RoutingSettingsSerialization(const domain::RoutingSettings& routing_settings) {
+    transport_catalogue_protobuf::RoutingSettings SerializeRoutingSettings(const domain::RoutingSettings& routing_settings) {
 
         transport_catalogue_protobuf::RoutingSettings routing_settings_proto;
 
@@ -252,7 +248,7 @@ namespace serialization {
         return routing_settings_proto;
     }
 
-    domain::RoutingSettings RoutingSettingsDeserialization(const transport_catalogue_protobuf::RoutingSettings& routing_settings_proto) {
+    domain::RoutingSettings DeserializeRoutingSettings(const transport_catalogue_protobuf::RoutingSettings& routing_settings_proto) {
 
         domain::RoutingSettings routing_settings;
 
@@ -262,16 +258,16 @@ namespace serialization {
         return routing_settings;
     }
 
-    void CatalogueSerialization(const transport_catalogue::TransportCatalogue& transport_catalogue,
+    void SerializeCatalogue(const transport_catalogue::TransportCatalogue& transport_catalogue,
         const map_renderer::RenderSettings& render_settings,
         const domain::RoutingSettings& routing_settings,
         std::ostream& out) {
 
         transport_catalogue_protobuf::Catalogue catalogue_proto;
 
-        transport_catalogue_protobuf::TransportCatalogue transport_catalogue_proto = TransportCatalogueSerialization(transport_catalogue);
-        transport_catalogue_protobuf::RenderSettings render_settings_proto = RenderSettingsSerialization(render_settings);
-        transport_catalogue_protobuf::RoutingSettings routing_settings_proto = RoutingSettingsSerialization(routing_settings);
+        transport_catalogue_protobuf::TransportCatalogue transport_catalogue_proto = SerializeTransportCatalogue(transport_catalogue);
+        transport_catalogue_protobuf::RenderSettings render_settings_proto = SerializeRenderSettings(render_settings);
+        transport_catalogue_protobuf::RoutingSettings routing_settings_proto = SerializeRoutingSettings(routing_settings);
 
         *catalogue_proto.mutable_transport_catalogue() = std::move(transport_catalogue_proto);
         *catalogue_proto.mutable_render_settings() = std::move(render_settings_proto);
@@ -281,7 +277,7 @@ namespace serialization {
 
     }
 
-    Catalogue CatalogueDeserialization(std::istream& in) {
+    Catalogue DeserializeCatalogue(std::istream& in) {
 
         transport_catalogue_protobuf::Catalogue catalogue_proto;
         auto success_parsing_catalogue_from_istream = catalogue_proto.ParseFromIstream(&in);
@@ -290,9 +286,9 @@ namespace serialization {
             throw std::runtime_error("error");
         }
 
-        return { TransportCatalogueDeserialization(catalogue_proto.transport_catalogue()),
-                RenderSettingsDeserialization(catalogue_proto.render_settings()),
-                RoutingSettingsDeserialization(catalogue_proto.routing_settings()) };
+        return { DeserializeTransportCatalogue(catalogue_proto.transport_catalogue()),
+                DeserializeRenderSettings(catalogue_proto.render_settings()),
+                DeserializeRoutingSettings(catalogue_proto.routing_settings()) };
     }
 
 }//end namespace serialization

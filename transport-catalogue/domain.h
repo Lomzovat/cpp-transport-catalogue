@@ -15,6 +15,7 @@ namespace domain {
 
     struct Stop {
         std::string name;
+        size_t id;
         geo::Coordinates coordinates;
 
         std::vector<Bus*> buses;
