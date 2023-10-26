@@ -7,8 +7,8 @@ namespace geo {
     const int EARTH_R = 6371000;
 
     struct Coordinates {
-        double latitude; // Широта
-        double longitude; // Долгота
+        double latitude; 
+        double longitude; 
         bool operator==(const Coordinates& other) const {
             return latitude == other.latitude && longitude == other.longitude;
         }
